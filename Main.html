@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
@@ -30,17 +30,38 @@
             margin-bottom: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             text-align: center;
+            position: relative;
+        }
+
+        .settings-icon {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #667eea;
+            transition: all 0.3s;
+        }
+
+        .settings-icon:hover {
+            transform: rotate(90deg);
+            color: #764ba2;
         }
 
         h1 {
             color: #667eea;
             font-size: 2.5em;
-            margin-bottom: 10px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .date-display {
             color: #666;
-            font-size: 1.2em;
+            font-size: 1.1em;
+            margin-top: 10px;
         }
 
         .section {
@@ -182,7 +203,7 @@
         }
 
         .timer-display {
-            font-size: 4em;
+            font-size: 5em;
             text-align: center;
             color: #667eea;
             margin: 30px 0;
@@ -242,12 +263,23 @@
             margin: 15px 0;
             text-align: center;
             box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+
+        .countdown-card:hover {
+            transform: scale(1.02);
         }
 
         .countdown-number {
-            font-size: 3.5em;
+            font-size: 4em;
             font-weight: bold;
             margin: 15px 0;
+        }
+
+        .countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
         }
 
         .progress-bar {
@@ -435,7 +467,7 @@
             flex-wrap: wrap;
         }
 
-        .input-group input {
+        .input-group input, .input-group select {
             flex: 1;
             min-width: 150px;
         }
@@ -450,16 +482,19 @@
             height: 100%;
             background: rgba(0,0,0,0.5);
             animation: fadeIn 0.3s;
+            overflow-y: auto;
         }
 
         .modal-content {
             background: white;
-            margin: 10% auto;
+            margin: 50px auto;
             padding: 30px;
             border-radius: 20px;
-            max-width: 500px;
+            max-width: 600px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             animation: slideUp 0.3s;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         @keyframes slideUp {
@@ -488,13 +523,66 @@
             font-weight: bold;
             color: #667eea;
         }
+
+        .settings-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .settings-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .subject-list-item, .routine-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎯 UPSC Journey Tracker</h1>
+            <div class="settings-icon" onclick="openSettings()">⚙️</div>
+            <h1 id="journeyTitle">Jitendra - UPSC Journey</h1>
             <div class="date-display" id="currentDate"></div>
+        </div>
+
+        <!-- Important Events Countdown -->
+        <div class="section">
+            <h2>🎯 Important Events Countdown</h2>
+            <div class="countdown-grid" id="eventDashboard"></div>
+        </div>
+
+        <!-- Study Timer -->
+        <div class="section">
+            <h2>⏱️ Study Timer</h2>
+            <div class="timer-display" id="timerDisplay">00:00:00</div>
+            
+            <div class="input-group" style="justify-content: center;">
+                <select id="subjectSelect" style="max-width: 300px;">
+                    <option value="">Select Subject</option>
+                </select>
+            </div>
+            
+            <div class="timer-controls">
+                <button onclick="startTimer()" id="startBtn">▶ Start</button>
+                <button onclick="pauseTimer()" id="pauseBtn">⏸ Pause</button>
+                <button onclick="stopTimer()" id="stopBtn">⏹ Stop & Save</button>
+            </div>
+
+            <h3 style="color: #667eea; margin-top: 30px;">Today's Study Sessions</h3>
+            <div id="studyLog"></div>
+
+            <h3 style="color: #667eea; margin-top: 30px;">Subject-wise Total Study Time</h3>
+            <div id="subjectTotals"></div>
         </div>
 
         <!-- Today's Dashboard -->
@@ -522,6 +610,50 @@
                     <div class="target-indicator">Target: 100%</div>
                 </div>
             </div>
+        </div>
+
+        <!-- Routine Tracker -->
+        <div class="section">
+            <h2>📋 Daily Routine Tracker</h2>
+            <div id="routineList"></div>
+        </div>
+
+        <!-- To-Do List -->
+        <div class="section">
+            <h2>✅ Today's To-Do List</h2>
+            <div id="todoDashboard"></div>
+        </div>
+
+        <!-- Health Tracker -->
+        <div class="section">
+            <h2>💪 Health Tracker</h2>
+            
+            <h3 style="color: #667eea;">Sleep Tracker</h3>
+            <div class="input-group">
+                <input type="number" id="sleepHours" min="0" max="24" step="0.5" placeholder="Hours of sleep" style="max-width: 200px;">
+                <button onclick="saveSleep()">💤 Save Sleep</button>
+            </div>
+
+            <h3 style="color: #667eea; margin-top: 30px;">Water Intake</h3>
+            <p style="margin: 10px 0; color: #666; text-align: center;">Click glasses to track your water intake</p>
+            <div class="glass-counter" id="waterGlasses"></div>
+            <p style="text-align: center; font-size: 1.2em; color: #667eea;"><strong>Today: <span id="waterCount">0</span> / 8 glasses</strong></p>
+        </div>
+
+        <!-- Syllabus Progress -->
+        <div class="section">
+            <h2>📚 Syllabus Progress Overview</h2>
+            <div id="syllabusDashboard"></div>
+        </div>
+
+        <!-- Daily Journal -->
+        <div class="section">
+            <h2>📝 Daily Journal</h2>
+            <textarea id="journalText" rows="8" placeholder="Write about your day, your learnings, challenges, and achievements..."></textarea>
+            <button onclick="saveJournal()">💾 Save Entry</button>
+
+            <h3 style="color: #667eea; margin-top: 30px;">Previous Entries</h3>
+            <div id="journalEntries"></div>
         </div>
 
         <!-- Monthly Overview -->
@@ -591,113 +723,82 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Study Timer -->
-        <div class="section">
-            <h2>⏱️ Study Timer</h2>
-            <div class="input-group">
-                <select id="subjectSelect">
-                    <option value="">Select Subject</option>
-                </select>
-                <input type="text" id="newSubject" placeholder="Add new subject">
-                <button onclick="addSubject()">Add Subject</button>
-            </div>
-            
-            <div class="timer-display" id="timerDisplay">00:00:00</div>
-            
-            <div class="timer-controls">
-                <button onclick="startTimer()" id="startBtn">▶ Start</button>
-                <button onclick="pauseTimer()" id="pauseBtn">⏸ Pause</button>
-                <button onclick="stopTimer()" id="stopBtn">⏹ Stop & Save</button>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSettings()">&times;</span>
+            <h2 style="color: #667eea;">⚙️ Settings</h2>
+
+            <!-- Profile Settings -->
+            <div class="settings-section">
+                <h3>👤 Profile Settings</h3>
+                <input type="text" id="settingsJourneyTitle" placeholder="e.g., Jitendra - UPSC Journey">
+                <button onclick="saveProfile()">💾 Save Profile</button>
             </div>
 
-            <h3 style="color: #667eea; margin-top: 30px;">Today's Study Sessions</h3>
-            <div id="studyLog"></div>
-
-            <h3 style="color: #667eea; margin-top: 30px;">Subject-wise Total Study Time</h3>
-            <div id="subjectTotals"></div>
-        </div>
-
-        <!-- Health Tracker -->
-        <div class="section">
-            <h2>💪 Health Tracker</h2>
-            
-            <h3 style="color: #667eea;">Sleep Tracker</h3>
-            <div class="input-group">
-                <input type="number" id="sleepHours" min="0" max="24" step="0.5" placeholder="Hours of sleep">
-                <button onclick="saveSleep()">💤 Save Sleep</button>
+            <!-- Subject Management -->
+            <div class="settings-section">
+                <h3>📚 Manage Subjects</h3>
+                <div class="input-group">
+                    <input type="text" id="newSubject" placeholder="Add new subject">
+                    <button onclick="addSubject()">➕ Add</button>
+                </div>
+                <div id="subjectList"></div>
             </div>
 
-            <h3 style="color: #667eea; margin-top: 30px;">Water Intake</h3>
-            <p style="margin: 10px 0; color: #666;">Click glasses to track your water intake</p>
-            <div class="glass-counter" id="waterGlasses"></div>
-            <p style="text-align: center; font-size: 1.2em; color: #667eea;"><strong>Today: <span id="waterCount">0</span> / 8 glasses</strong></p>
-        </div>
-
-        <!-- Daily Journal -->
-        <div class="section">
-            <h2>📝 Daily Journal</h2>
-            <textarea id="journalText" rows="8" placeholder="Write about your day, your learnings, challenges, and achievements..."></textarea>
-            <button onclick="saveJournal()">💾 Save Entry</button>
-
-            <h3 style="color: #667eea; margin-top: 30px;">Previous Entries</h3>
-            <div id="journalEntries"></div>
-        </div>
-
-        <!-- Routine Tracker -->
-        <div class="section">
-            <h2>📋 Daily Routine Tracker</h2>
-            
-            <h3 style="color: #667eea;">Create/Edit Routine</h3>
-            <div class="input-group">
-                <input type="time" id="routineTime">
-                <input type="text" id="routineActivity" placeholder="Activity">
-                <button onclick="addRoutineItem()">➕ Add to Routine</button>
+            <!-- Event Management -->
+            <div class="settings-section">
+                <h3>🎯 Manage Events</h3>
+                <div class="input-group">
+                    <input type="text" id="eventName" placeholder="Event name">
+                    <input type="date" id="eventDate">
+                    <button onclick="addEvent()">➕ Add Event</button>
+                </div>
+                <div id="eventList"></div>
             </div>
 
-            <h3 style="color: #667eea; margin-top: 30px;">Today's Routine</h3>
-            <div id="routineList"></div>
-        </div>
-
-        <!-- To-Do List -->
-        <div class="section">
-            <h2>✅ Today's To-Do List</h2>
-            <div class="input-group">
-                <input type="text" id="todoInput" placeholder="Add a task...">
-                <button onclick="addTodo()">➕ Add Task</button>
+            <!-- Routine Management -->
+            <div class="settings-section">
+                <h3>📋 Manage Routine</h3>
+                <div class="input-group">
+                    <input type="time" id="routineTime">
+                    <input type="text" id="routineActivity" placeholder="Activity">
+                    <button onclick="addRoutineItem()">➕ Add</button>
+                </div>
+                <div id="routineManagement"></div>
             </div>
-            <div id="todoList"></div>
-        </div>
 
-        <!-- Event Countdown -->
-        <div class="section">
-            <h2>🎯 Important Events Countdown</h2>
-            <div class="input-group">
-                <input type="text" id="eventName" placeholder="Event name (e.g., UPSC Prelims)">
-                <input type="date" id="eventDate">
-                <button onclick="addEvent()">➕ Add Event</button>
+            <!-- To-Do Management -->
+            <div class="settings-section">
+                <h3>✅ Manage To-Do List</h3>
+                <div class="input-group">
+                    <input type="text" id="todoInput" placeholder="Add a task...">
+                    <button onclick="addTodo()">➕ Add Task</button>
+                </div>
+                <div id="todoManagement"></div>
             </div>
-            <div id="eventList"></div>
-        </div>
 
-        <!-- Syllabus Progress -->
-        <div class="section">
-            <h2>📚 Syllabus Progress Tracker</h2>
-            <div class="input-group">
-                <input type="text" id="syllabusSubject" placeholder="Subject">
-                <input type="text" id="syllabusTopic" placeholder="Topic">
-                <input type="number" id="syllabusTotal" placeholder="Total units" min="1">
-                <button onclick="addSyllabusTopic()">➕ Add Topic</button>
+            <!-- Syllabus Management -->
+            <div class="settings-section">
+                <h3>📚 Manage Syllabus</h3>
+                <div class="input-group">
+                    <input type="text" id="syllabusSubject" placeholder="Subject">
+                    <input type="text" id="syllabusTopic" placeholder="Topic">
+                    <input type="number" id="syllabusTotal" placeholder="Total units" min="1">
+                    <button onclick="addSyllabusTopic()">➕ Add Topic</button>
+                </div>
+                <div id="syllabusManagement"></div>
             </div>
-            <div id="syllabusList"></div>
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Edit Study Session Modal -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeEditModal()">&times;</span>
-            <h2 style="color: #667eea;">Edit Study Session</h2>
+            <h2 style="color: #667eea;">✏️ Edit Study Session</h2>
             <select id="editSubject"></select>
             <input type="number" id="editHours" placeholder="Hours" min="0">
             <input type="number" id="editMinutes" placeholder="Minutes" min="0" max="59">
@@ -707,6 +808,9 @@
 
     <script>
         let data = {
+            profile: {
+                journeyTitle: 'Jitendra - UPSC Journey'
+            },
             subjects: ['History', 'Geography', 'Polity', 'Economics', 'Ethics', 'CSAT'],
             studySessions: [],
             journals: [],
@@ -729,28 +833,48 @@
         function loadData() {
             const saved = localStorage.getItem('upscTrackerData');
             if (saved) {
-                data = JSON.parse(saved);
+                try {
+                    data = JSON.parse(saved);
+                    if (!data.profile) {
+                        data.profile = { journeyTitle: 'Jitendra - UPSC Journey' };
+                    }
+                    if (!data.health) {
+                        data.health = { sleep: {}, water: {}, routine: {} };
+                    }
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
             }
             initializeApp();
         }
 
         function saveData() {
-            localStorage.setItem('upscTrackerData', JSON.stringify(data));
+            try {
+                localStorage.setItem('upscTrackerData', JSON.stringify(data));
+            } catch (e) {
+                console.error('Error saving data:', e);
+                alert('Error saving data. Please check browser storage.');
+            }
         }
 
         function initializeApp() {
+            updateProfile();
             updateCurrentDate();
             updateSubjectSelect();
             updateDashboard();
             updateStudyLog();
             updateJournalEntries();
             updateRoutineList();
-            updateTodoList();
-            updateEventList();
-            updateSyllabusList();
+            updateTodoDashboard();
+            updateEventDashboard();
+            updateSyllabusDashboard();
             updateWaterGlasses();
             loadTodaySleep();
             updateMonthlyOverview();
+        }
+
+        function updateProfile() {
+            document.getElementById('journeyTitle').textContent = data.profile.journeyTitle;
         }
 
         function updateCurrentDate() {
@@ -758,6 +882,29 @@
             document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', options);
         }
 
+        // Settings Functions
+        function openSettings() {
+            document.getElementById('settingsJourneyTitle').value = data.profile.journeyTitle;
+            updateSubjectListSettings();
+            updateEventListSettings();
+            updateRoutineManagement();
+            updateTodoManagement();
+            updateSyllabusManagement();
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function saveProfile() {
+            data.profile.journeyTitle = document.getElementById('settingsJourneyTitle').value || 'Jitendra - UPSC Journey';
+            saveData();
+            updateProfile();
+            alert('Profile updated successfully!');
+        }
+
+        // Timer Functions
         function startTimer() {
             const subject = document.getElementById('subjectSelect').value;
             if (!timerRunning && subject) {
@@ -781,16 +928,18 @@
         function stopTimer() {
             if (timerSeconds > 0) {
                 const subject = document.getElementById('subjectSelect').value;
-                const session = {
-                    subject: subject,
-                    duration: timerSeconds,
-                    date: new Date().toISOString()
-                };
-                data.studySessions.push(session);
-                saveData();
-                updateStudyLog();
-                updateDashboard();
-                updateMonthlyOverview();
+                if (subject) {
+                    const session = {
+                        subject: subject,
+                        duration: timerSeconds,
+                        date: new Date().toISOString()
+                    };
+                    data.studySessions.push(session);
+                    saveData();
+                    updateStudyLog();
+                    updateDashboard();
+                    updateMonthlyOverview();
+                }
             }
             pauseTimer();
             timerSeconds = 0;
@@ -806,13 +955,24 @@
                 `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
 
+        // Subject Management
         function addSubject() {
             const newSubject = document.getElementById('newSubject').value.trim();
             if (newSubject && !data.subjects.includes(newSubject)) {
                 data.subjects.push(newSubject);
                 saveData();
                 updateSubjectSelect();
+                updateSubjectListSettings();
                 document.getElementById('newSubject').value = '';
+            }
+        }
+
+        function deleteSubject(index) {
+            if (confirm('Are you sure you want to delete this subject?')) {
+                data.subjects.splice(index, 1);
+                saveData();
+                updateSubjectSelect();
+                updateSubjectListSettings();
             }
         }
 
@@ -831,6 +991,21 @@
             });
         }
 
+        function updateSubjectListSettings() {
+            const container = document.getElementById('subjectList');
+            container.innerHTML = '';
+            data.subjects.forEach((subject, index) => {
+                const div = document.createElement('div');
+                div.className = 'subject-list-item';
+                div.innerHTML = `
+                    <span>${subject}</span>
+                    <button class="delete-btn" onclick="deleteSubject(${index})">🗑️ Delete</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Study Log Functions
         function updateStudyLog() {
             const today = new Date().toDateString();
             const todaySessions = data.studySessions.filter(s => 
@@ -843,7 +1018,7 @@
             if (todaySessions.length === 0) {
                 logDiv.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No study sessions recorded today. Start your timer!</p>';
             } else {
-                todaySessions.forEach((session, localIndex) => {
+                todaySessions.forEach((session) => {
                     const actualIndex = data.studySessions.indexOf(session);
                     const div = document.createElement('div');
                     div.className = 'study-log';
@@ -864,10 +1039,615 @@
                 });
             }
 
+            // Update subject totals
             const totalsDiv = document.getElementById('subjectTotals');
             totalsDiv.innerHTML = '';
             const subjectTotals = {};
             
             data.studySessions.forEach(session => {
                 if (!subjectTotals[session.subject]) {
-                    subjectTotals[session.subject] = 0
+                    subjectTotals[session.subject] = 0;
+                }
+                subjectTotals[session.subject] += session.duration;
+            });
+
+            if (Object.keys(subjectTotals).length === 0) {
+                totalsDiv.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No study sessions recorded yet.</p>';
+            } else {
+                Object.entries(subjectTotals).forEach(([subject, total]) => {
+                    const div = document.createElement('div');
+                    div.className = 'study-log';
+                    const hours = Math.floor(total / 3600);
+                    const minutes = Math.floor((total % 3600) / 60);
+                    div.innerHTML = `<strong>${subject}</strong>: ${hours}h ${minutes}m total`;
+                    totalsDiv.appendChild(div);
+                });
+            }
+        }
+
+        function editSession(index) {
+            editingSessionIndex = index;
+            const session = data.studySessions[index];
+            const hours = Math.floor(session.duration / 3600);
+            const minutes = Math.floor((session.duration % 3600) / 60);
+            
+            document.getElementById('editSubject').value = session.subject;
+            document.getElementById('editHours').value = hours;
+            document.getElementById('editMinutes').value = minutes;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingSessionIndex = -1;
+        }
+
+        function saveEdit() {
+            if (editingSessionIndex >= 0) {
+                const subject = document.getElementById('editSubject').value;
+                const hours = parseInt(document.getElementById('editHours').value) || 0;
+                const minutes = parseInt(document.getElementById('editMinutes').value) || 0;
+                
+                data.studySessions[editingSessionIndex].subject = subject;
+                data.studySessions[editingSessionIndex].duration = (hours * 3600) + (minutes * 60);
+                
+                saveData();
+                updateStudyLog();
+                updateDashboard();
+                updateMonthlyOverview();
+                closeEditModal();
+            }
+        }
+
+        function deleteSession(index) {
+            if (confirm('Are you sure you want to delete this study session?')) {
+                data.studySessions.splice(index, 1);
+                saveData();
+                updateStudyLog();
+                updateDashboard();
+                updateMonthlyOverview();
+            }
+        }
+
+        // Journal Functions
+        function saveJournal() {
+            const text = document.getElementById('journalText').value.trim();
+            if (text) {
+                const entry = {
+                    text: text,
+                    date: new Date().toISOString()
+                };
+                data.journals.push(entry);
+                saveData();
+                document.getElementById('journalText').value = '';
+                updateJournalEntries();
+                alert('Journal entry saved!');
+            }
+        }
+
+        function updateJournalEntries() {
+            const container = document.getElementById('journalEntries');
+            container.innerHTML = '';
+            
+            if (data.journals.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No journal entries yet.</p>';
+            } else {
+                data.journals.slice().reverse().forEach((entry, index) => {
+                    const actualIndex = data.journals.length - 1 - index;
+                    const div = document.createElement('div');
+                    div.className = 'journal-entry';
+                    div.innerHTML = `
+                        <div class="date-header">${new Date(entry.date).toLocaleString()}</div>
+                        <p>${entry.text}</p>
+                        <button class="delete-btn" onclick="deleteJournal(${actualIndex})">🗑️ Delete</button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function deleteJournal(index) {
+            if (confirm('Are you sure you want to delete this journal entry?')) {
+                data.journals.splice(index, 1);
+                saveData();
+                updateJournalEntries();
+            }
+        }
+
+        // Routine Functions
+        function addRoutineItem() {
+            const time = document.getElementById('routineTime').value;
+            const activity = document.getElementById('routineActivity').value.trim();
+            
+            if (time && activity) {
+                data.routine.push({ time, activity });
+                data.routine.sort((a, b) => a.time.localeCompare(b.time));
+                saveData();
+                updateRoutineList();
+                updateRoutineManagement();
+                document.getElementById('routineTime').value = '';
+                document.getElementById('routineActivity').value = '';
+            }
+        }
+
+        function updateRoutineList() {
+            const today = new Date().toDateString();
+            if (!data.health.routine[today]) {
+                data.health.routine[today] = {};
+            }
+            
+            const container = document.getElementById('routineList');
+            container.innerHTML = '';
+            
+            if (data.routine.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No routine items set. Add them in Settings!</p>';
+            } else {
+                data.routine.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'routine-item';
+                    const checked = data.health.routine[today][index] || false;
+                    div.innerHTML = `
+                        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleRoutine(${index})">
+                        <strong>${item.time}</strong> - ${item.activity}
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            
+            updateDashboard();
+        }
+
+        function updateRoutineManagement() {
+            const container = document.getElementById('routineManagement');
+            container.innerHTML = '';
+            
+            data.routine.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'routine-list-item';
+                div.innerHTML = `
+                    <span><strong>${item.time}</strong> - ${item.activity}</span>
+                    <button class="delete-btn" onclick="deleteRoutine(${index})">🗑️ Delete</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function toggleRoutine(index) {
+            const today = new Date().toDateString();
+            if (!data.health.routine[today]) {
+                data.health.routine[today] = {};
+            }
+            data.health.routine[today][index] = !data.health.routine[today][index];
+            saveData();
+            updateRoutineList();
+        }
+
+        function deleteRoutine(index) {
+            if (confirm('Are you sure you want to delete this routine item?')) {
+                data.routine.splice(index, 1);
+                saveData();
+                updateRoutineList();
+                updateRoutineManagement();
+            }
+        }
+
+        // To-Do Functions
+        function addTodo() {
+            const text = document.getElementById('todoInput').value.trim();
+            if (text) {
+                const today = new Date().toDateString();
+                const todo = {
+                    text: text,
+                    date: today,
+                    done: false
+                };
+                data.todos.push(todo);
+                saveData();
+                document.getElementById('todoInput').value = '';
+                updateTodoDashboard();
+                updateTodoManagement();
+            }
+        }
+
+        function updateTodoDashboard() {
+            const today = new Date().toDateString();
+            const todayTodos = data.todos.filter(t => t.date === today);
+            
+            const container = document.getElementById('todoDashboard');
+            container.innerHTML = '';
+            
+            if (todayTodos.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No tasks for today. Add them in Settings!</p>';
+            } else {
+                todayTodos.forEach((todo) => {
+                    const actualIndex = data.todos.indexOf(todo);
+                    const div = document.createElement('div');
+                    div.className = 'todo-item';
+                    div.innerHTML = `
+                        <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo(${actualIndex})">
+                        <span style="flex: 1; ${todo.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${todo.text}</span>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function updateTodoManagement() {
+            const today = new Date().toDateString();
+            const todayTodos = data.todos.filter(t => t.date === today);
+            
+            const container = document.getElementById('todoManagement');
+            container.innerHTML = '';
+            
+            todayTodos.forEach((todo) => {
+                const actualIndex = data.todos.indexOf(todo);
+                const div = document.createElement('div');
+                div.className = 'todo-item';
+                div.innerHTML = `
+                    <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo(${actualIndex})">
+                    <span style="flex: 1; ${todo.done ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${todo.text}</span>
+                    <button class="delete-btn" onclick="deleteTodo(${actualIndex})">🗑️</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function toggleTodo(index) {
+            data.todos[index].done = !data.todos[index].done;
+            saveData();
+            updateTodoDashboard();
+            updateTodoManagement();
+        }
+
+        function deleteTodo(index) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                data.todos.splice(index, 1);
+                saveData();
+                updateTodoDashboard();
+                updateTodoManagement();
+            }
+        }
+
+        // Health Functions
+        function saveSleep() {
+            const hours = parseFloat(document.getElementById('sleepHours').value);
+            if (hours >= 0) {
+                const today = new Date().toDateString();
+                data.health.sleep[today] = hours;
+                saveData();
+                updateDashboard();
+                alert('Sleep recorded successfully!');
+            }
+        }
+
+        function loadTodaySleep() {
+            const today = new Date().toDateString();
+            const sleep = data.health.sleep[today] || 0;
+            document.getElementById('sleepHours').value = sleep || '';
+        }
+
+        function updateWaterGlasses() {
+            const today = new Date().toDateString();
+            const count = data.health.water[today] || 0;
+            
+            const container = document.getElementById('waterGlasses');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 8; i++) {
+                const glass = document.createElement('div');
+                glass.className = 'glass' + (i < count ? ' filled' : '');
+                glass.onclick = () => setWaterCount(i + 1);
+                container.appendChild(glass);
+            }
+            
+            document.getElementById('waterCount').textContent = count;
+            updateDashboard();
+        }
+
+        function setWaterCount(count) {
+            const today = new Date().toDateString();
+            data.health.water[today] = count;
+            saveData();
+            updateWaterGlasses();
+        }
+
+        // Event Functions
+        function addEvent() {
+            const name = document.getElementById('eventName').value.trim();
+            const date = document.getElementById('eventDate').value;
+            
+            if (name && date) {
+                data.events.push({ name, date });
+                saveData();
+                updateEventDashboard();
+                updateEventListSettings();
+                document.getElementById('eventName').value = '';
+                document.getElementById('eventDate').value = '';
+            }
+        }
+
+        function updateEventDashboard() {
+            const container = document.getElementById('eventDashboard');
+            container.innerHTML = '';
+            
+            if (data.events.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No events scheduled. Add them in Settings!</p>';
+            } else {
+                data.events.forEach((event) => {
+                    const eventDate = new Date(event.date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const diffTime = eventDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    const div = document.createElement('div');
+                    div.className = 'countdown-card';
+                    div.innerHTML = `
+                        <h3>${event.name}</h3>
+                        <div class="countdown-number">${diffDays}</div>
+                        <p>days ${diffDays >= 0 ? 'remaining' : 'overdue'}</p>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function updateEventListSettings() {
+            const container = document.getElementById('eventList');
+            container.innerHTML = '';
+            
+            data.events.forEach((event, index) => {
+                const div = document.createElement('div');
+                div.className = 'routine-list-item';
+                div.innerHTML = `
+                    <span><strong>${event.name}</strong> - ${event.date}</span>
+                    <button class="delete-btn" onclick="deleteEvent(${index})">🗑️ Delete</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function deleteEvent(index) {
+            if (confirm('Are you sure you want to delete this event?')) {
+                data.events.splice(index, 1);
+                saveData();
+                updateEventDashboard();
+                updateEventListSettings();
+            }
+        }
+
+        // Syllabus Functions
+        function addSyllabusTopic() {
+            const subject = document.getElementById('syllabusSubject').value.trim();
+            const topic = document.getElementById('syllabusTopic').value.trim();
+            const total = parseInt(document.getElementById('syllabusTotal').value);
+            
+            if (subject && topic && total > 0) {
+                data.syllabus.push({ subject, topic, total, completed: 0 });
+                saveData();
+                updateSyllabusDashboard();
+                updateSyllabusManagement();
+                document.getElementById('syllabusSubject').value = '';
+                document.getElementById('syllabusTopic').value = '';
+                document.getElementById('syllabusTotal').value = '';
+            }
+        }
+
+        function updateSyllabusDashboard() {
+            const container = document.getElementById('syllabusDashboard');
+            container.innerHTML = '';
+            
+            if (data.syllabus.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No syllabus topics added. Add them in Settings!</p>';
+            } else {
+                data.syllabus.forEach((item) => {
+                    const percentage = Math.round((item.completed / item.total) * 100);
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '20px';
+                    div.innerHTML = `
+                        <h3 style="color: #667eea;">${item.subject} - ${item.topic}</h3>
+                        <p style="color: #666;">Progress: ${item.completed} / ${item.total} units</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%">${percentage}%</div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function updateSyllabusManagement() {
+            const container = document.getElementById('syllabusManagement');
+            container.innerHTML = '';
+            
+            data.syllabus.forEach((item, index) => {
+                const percentage = Math.round((item.completed / item.total) * 100);
+                const div = document.createElement('div');
+                div.style.marginBottom = '20px';
+                div.style.padding = '15px';
+                div.style.background = 'white';
+                div.style.borderRadius = '10px';
+                div.innerHTML = `
+                    <h4 style="color: #667eea;">${item.subject} - ${item.topic}</h4>
+                    <p>Progress: ${item.completed} / ${item.total} units</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%">${percentage}%</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button onclick="updateProgress(${index}, 1)">+1 Unit</button>
+                        <button onclick="updateProgress(${index}, -1)">-1 Unit</button>
+                        <button class="delete-btn" onclick="deleteSyllabus(${index})">🗑️ Delete</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateProgress(index, change) {
+            data.syllabus[index].completed = Math.max(0, Math.min(data.syllabus[index].total, data.syllabus[index].completed + change));
+            saveData();
+            updateSyllabusDashboard();
+            updateSyllabusManagement();
+        }
+
+        function deleteSyllabus(index) {
+            if (confirm('Are you sure you want to delete this syllabus topic?')) {
+                data.syllabus.splice(index, 1);
+                saveData();
+                updateSyllabusDashboard();
+                updateSyllabusManagement();
+            }
+        }
+
+        // Dashboard Update
+        function updateDashboard() {
+            const today = new Date().toDateString();
+            
+            // Study time
+            const todaySessions = data.studySessions.filter(s => 
+                new Date(s.date).toDateString() === today
+            );
+            const totalSeconds = todaySessions.reduce((sum, s) => sum + s.duration, 0);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            document.getElementById('todayStudyTime').textContent = `${hours}h ${minutes}m`;
+            
+            // Sleep
+            const sleep = data.health.sleep[today] || 0;
+            document.getElementById('todaySleep').textContent = `${sleep}h`;
+            
+            // Water
+            const water = data.health.water[today] || 0;
+            document.getElementById('todayWater').textContent = water;
+            
+            // Routine completion
+            const routineToday = data.health.routine[today] || {};
+            const completedCount = Object.values(routineToday).filter(v => v).length;
+            const totalRoutine = data.routine.length;
+            const routinePercentage = totalRoutine > 0 ? Math.round((completedCount / totalRoutine) * 100) : 0;
+            document.getElementById('routineCompletion').textContent = `${routinePercentage}%`;
+        }
+
+        // Monthly Overview
+        function updateMonthlyOverview() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const monthlySessions = data.studySessions.filter(s => {
+                const sessionDate = new Date(s.date);
+                return sessionDate.getMonth() === currentMonth && sessionDate.getFullYear() === currentYear;
+            });
+            
+            // Calculate total hours
+            const totalSeconds = monthlySessions.reduce((sum, s) => sum + s.duration, 0);
+            const totalHours = Math.floor(totalSeconds / 3600);
+            document.getElementById('monthlyTotalHours').textContent = `${totalHours}h`;
+            
+            // Calculate days studied
+            const daysStudied = new Set(monthlySessions.map(s => new Date(s.date).toDateString())).size;
+            document.getElementById('monthlyAttendance').textContent = daysStudied;
+            
+            // Calculate average
+            const avgHours = daysStudied > 0 ? Math.round(totalSeconds / 3600 / daysStudied) : 0;
+            document.getElementById('monthlyAverage').textContent = `${avgHours}h`;
+            
+            // Performance badge
+            const badge = document.getElementById('performanceBadge');
+            if (avgHours >= 8) {
+                badge.className = 'performance-badge badge-excellent';
+                badge.textContent = '🏆 Excellent Performance!';
+            } else if (avgHours >= 6) {
+                badge.className = 'performance-badge badge-good';
+                badge.textContent = '✨ Good Performance!';
+            } else if (avgHours >= 4) {
+                badge.className = 'performance-badge badge-average';
+                badge.textContent = '👍 Average Performance';
+            } else {
+                badge.className = 'performance-badge badge-poor';
+                badge.textContent = '⚠️ Needs Improvement';
+            }
+            
+            // Calculate streak
+            calculateStreak();
+            
+            // Update heatmap
+            updateHeatmap();
+        }
+
+        function calculateStreak() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let streak = 0;
+            let checkDate = new Date(today);
+            
+            while (true) {
+                const dateStr = checkDate.toDateString();
+                const daySessions = data.studySessions.filter(s => 
+                    new Date(s.date).toDateString() === dateStr
+                );
+                
+                if (daySessions.length > 0) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            
+            document.getElementById('streakCount').textContent = streak;
+        }
+
+        function updateHeatmap() {
+            const grid = document.getElementById('heatmapGrid');
+            grid.innerHTML = '';
+            
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            // Add empty cells for days before first day of month
+            const firstDayOfWeek = firstDay.getDay();
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyDiv = document.createElement('div');
+                grid.appendChild(emptyDiv);
+            }
+            
+            // Add cells for each day of month
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const date = new Date(now.getFullYear(), now.getMonth(), day);
+                const dateStr = date.toDateString();
+                
+                const daySessions = data.studySessions.filter(s => 
+                    new Date(s.date).toDateString() === dateStr
+                );
+                
+                const totalSeconds = daySessions.reduce((sum, s) => sum + s.duration, 0);
+                const hours = totalSeconds / 3600;
+                
+                let level = 0;
+                if (hours >= 10) level = 4;
+                else if (hours >= 7) level = 3;
+                else if (hours >= 4) level = 2;
+                else if (hours > 0) level = 1;
+                
+                const dayDiv = document.createElement('div');
+                dayDiv.className = `heatmap-day heatmap-level-${level}`;
+                dayDiv.textContent = day;
+                dayDiv.title = `${dateStr}: ${Math.round(hours * 10) / 10}h`;
+                grid.appendChild(dayDiv);
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Initialize on page load
+        window.onload = loadData;
+    </script>
+</body>
+</html>
