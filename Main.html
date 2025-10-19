@@ -738,6 +738,16 @@
                 <button onclick="saveProfile()">💾 Save Profile</button>
             </div>
 
+            <!-- Data Backup -->
+            <div class="settings-section">
+                <h3>💾 Data Backup & Restore</h3>
+                <p style="color: #666; margin-bottom: 15px;">⚠️ Important: Your data is stored locally in your browser. Backup regularly to prevent data loss!</p>
+                <button onclick="exportData()">📥 Download Backup</button>
+                <button onclick="document.getElementById('importFile').click()" style="background: #10ac84;">📤 Restore Backup</button>
+                <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+                <button onclick="clearAllData()" style="background: #ff4757; margin-top: 10px;">🗑️ Clear All Data</button>
+            </div>
+
             <!-- Subject Management -->
             <div class="settings-section">
                 <h3>📚 Manage Subjects</h3>
@@ -902,6 +912,52 @@
             saveData();
             updateProfile();
             alert('Profile updated successfully!');
+        }
+
+        // Data Backup Functions
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            link.download = `upsc-tracker-backup-${date}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            alert('✅ Backup downloaded successfully! Keep this file safe.');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (confirm('⚠️ This will replace all your current data. Are you sure?')) {
+                        data = importedData;
+                        saveData();
+                        initializeApp();
+                        alert('✅ Data restored successfully!');
+                        closeSettings();
+                    }
+                } catch (error) {
+                    alert('❌ Error: Invalid backup file!');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset file input
+        }
+
+        function clearAllData() {
+            if (confirm('⚠️ WARNING: This will delete ALL your data permanently! Are you sure?')) {
+                if (confirm('⚠️ FINAL WARNING: This cannot be undone! Continue?')) {
+                    localStorage.removeItem('upscTrackerData');
+                    location.reload();
+                }
+            }
         }
 
         // Timer Functions
